@@ -9,8 +9,8 @@ env = {
 }
 
 tick = {
-  total_ticks: 400,
-  write_to_file: 5,
+  total_ticks: 20,
+  write_to_file: 1,
 }
 
 board = {
