@@ -9,6 +9,7 @@ class Runner
 
   def run
     (@tick[:total_ticks] + 1).times do |tick|
+      puts "Tick #{tick}"
       @board.tick
       if tick % @tick[:write_to_file] == 0
         write_to_file(tick, @board.state)
