@@ -1,17 +1,17 @@
 
-FISH_FERTILITY_RATE = 3
-SHARK_FERTILITY_RATE = 9
-FISH_STARTING_ENERGY = 7
-SHARK_STARTING_ENERGY = 12
+FISH_FERTILITY_RATE = 4
+FISH_STARTING_ENERGY = 8
+SHARK_FERTILITY_RATE = 8
+SHARK_STARTING_ENERGY = 5
 SHARK_ENERGY_GAIN = 2
 
 env = {
-  starting_fish: 100,
-  starting_sharks: 20,
+  starting_fish: 300,
+  starting_sharks: 40,
 }
 
 tick = {
-  total_ticks: 15,
+  total_ticks: 30,
   write_to_file: 1,
 }
 

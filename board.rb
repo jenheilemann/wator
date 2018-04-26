@@ -11,24 +11,39 @@ class Board
   def initialize board, env
     @height = board[:height]
     @width = board[:width]
-    @env = env
-    create_initial_state
+    @vertebrates = []
+    initalize_grid
+    populate_grid(env)
   end
 
   def tick
-    @vertebrates = @grid.values.select {|v| v.class != Water }
+    initalize_grid
+    @newborns = []
     @vertebrates.each do |entity|
-      entity.tick
+      entity.tick(self)
     end
-    puts "vertebrates: " + @vertebrates.length.to_s
-    puts "Grid: " + @grid.values.select {|v| v.class != Water }.length.to_s
+    @vertebrates = @vertebrates.select {|v| v.alive? } + @newborns.select {|v| v.alive? }
+
+    # Reporting
+    puts "Vertebrates: " + @vertebrates.length.to_s
+    grid_verts = @grid.values.select {|v| v.class != Water }
+    puts "Grid: " + grid_verts.length.to_s
+    if (@vertebrates.length != grid_verts.length)
+      puts "Difference: "
+      diff = @vertebrates - grid_verts | grid_verts - @vertebrates
+      diff.each do |v|
+        newborn = @newborns.include?(v)
+        puts "  - #{v} new: #{newborn}"
+        puts "    in grid: #{@grid[[v.x, v.y]]}"
+      end
+    end
   end
 
   def state
     string = ""
     @height.times do |y|
       @width.times do |x|
-        string << @grid[[x, y]].to_s
+        string << @grid[[x, y]].serialize
       end
       string << "\n"
     end
@@ -86,7 +101,7 @@ class Board
 
   def move(entity, direction)
     x, y = entity.x, entity.y
-    @grid[[x, y]] = Water.new({x: x, y: y}, self)
+    @grid[[x, y]] = Water.new({x: x, y: y})
 
     case direction
       when DIRECTIONS[:west]
@@ -109,53 +124,55 @@ class Board
   end
 
   def eat(x, y)
-    eaten = @vertebrates.first { |v| v.is_fish? && v.x == x && v.y == y }
-    puts "eaten: #{eaten.class} #{@vertebrates.delete(eaten){"Not found!!!!!!!"}}"
-    # @vertebrates.delete(eaten)
+    eaten = @vertebrates.find { |v| v.is_fish? && v.x == x && v.y == y }
+    eaten ||= @newborns.find {|v| v.is_fish? && v.x == x && v.y == y }
+    # puts "Eaten: #{eaten}"
+
+    # puts "eaten: #{eaten.class} #{@vertebrates.delete(eaten){"Not found!!!!!!!"}}"
+    eaten.die
   end
 
   def kill(entity)
-    x, y = entity.x, entity.y
-    @grid[[x, y]] = Water.new({x: x, y: y}, self)
-    puts "kill: #{entity.class} #{@vertebrates.delete(entity){ "NOT FoUND!  ! !"}}"
-    # @vertebrates.delete(entity)
+    @grid[[entity.x, entity.y]] = Water.new({x: entity.x, y: entity.y})
+    entity.die
   end
 
   def populate(klass, x, y)
-    # puts "populate: #{klass} x:#{x} y:#{y}"
-    @grid[[x, y]] = klass.new({x: x, y: y}, self)
-    @vertebrates << @grid[[x, y]]
-    # puts "#{@grid[[x, y]]} #{@grid[[x, y]].class} #{@grid[[x, y]].x} #{@grid[[x, y]].y}"
+    baby = klass.new({x: x, y: y})
+    @grid[[x, y]] = baby
+    @newborns << baby
   end
 
 private
-  def create_initial_state
+  def initalize_grid
     @grid = {}
-    @vertebrates = []
 
-    @width.times do |x|
-      @height.times do |y|
-        @grid[[x, y]] = Water.new({x: x, y: y}, self)
+    @height.times do |y|
+      @width.times do |x|
+        creature = @vertebrates.find {|v| v.x == x && v.y == y }
+        @grid[[x, y]] = creature || Water.new({x: x, y: y})
       end
     end
+  end
 
+  def populate_grid(env)
     fish_counter = 0
-    until fish_counter == @env[:starting_fish] do
+    until fish_counter == env[:starting_fish] do
       x = rand(@width)
       y = rand(@height)
       if @grid[[x,y]].is_water?
-        @grid[[x,y]] = Fish.new({x: x, y: y,}, self)
+        @grid[[x,y]] = Fish.new({x: x, y: y,})
         @vertebrates << @grid[[x,y]]
         fish_counter += 1
       end
     end
 
     shark_counter = 0
-    until shark_counter == @env[:starting_sharks] do
+    until shark_counter == env[:starting_sharks] do
       x = rand(@width)
       y = rand(@height)
       if @grid[[x,y]].is_water?
-        @grid[[x,y]] = Shark.new({x: x, y: y}, self)
+        @grid[[x,y]] = Shark.new({x: x, y: y})
         @vertebrates << @grid[[x,y]]
         shark_counter += 1
       end
